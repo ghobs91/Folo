@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "cross-env NODE_ENV=production vite build && tsx scripts/prepare-vercel-build.ts && tsdown && tsx scripts/cleanup-vercel-build.ts",
+    "build:netlify": "cross-env NODE_ENV=production NETLIFY=1 vite build && tsx scripts/prepare-netlify-build.ts && tsdown && tsx scripts/cleanup-netlify-build.ts",
     "dev": "cross-env NODE_ENV=development tsx watch --include \"src/**/*.ts\" --exclude \"./*.ts\" --exclude \"./*.mjs\" index.ts",
     "meta": "tsx helper/meta-map.ts --watch",
     "start": "tsx index.ts",
@@ -54,6 +55,7 @@
     "@follow/shared": "workspace:*",
     "@follow/types": "workspace:*",
     "@follow/utils": "workspace:*",
+    "@netlify/functions": "2.8.2",
     "@types/html-minifier-terser": "7.0.2",
     "chokidar": "4.0.3",
     "code-inspector-plugin": "1.2.10",

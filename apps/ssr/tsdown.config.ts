@@ -19,7 +19,7 @@ export default defineConfig({
 
   hooks(hooks) {
     hooks.hook("build:done", async () => {
-      if (process.env.VERCEL !== "1") return
+      if (process.env.VERCEL !== "1" && process.env.NETLIFY !== "1") return
 
       const outputFile = "dist/server/index.mjs"
       const tempFile = `${outputFile}.tmp`

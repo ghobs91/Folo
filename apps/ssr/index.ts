@@ -16,6 +16,7 @@ import { globalRoute } from "./src/router/global"
 import { ogRoute } from "./src/router/og"
 
 const isVercel = process.env.VERCEL === "1"
+const isNetlify = process.env.NETLIFY === "1"
 
 declare module "@fastify/request-context" {
   interface RequestContextData {
@@ -82,7 +83,7 @@ export const createApp = async () => {
   return app
 }
 
-if (!isVercel) {
+if (!isVercel && !isNetlify) {
   createApp().then(async (app) => {
     await app.listen({ port: 2234, host: "0.0.0.0" })
     console.info("Server is running on http://localhost:2234")
