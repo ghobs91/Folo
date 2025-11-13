@@ -1,7 +1,7 @@
 # Netlify configuration for Follow SSR
 [build]
   base = "apps/ssr"
-  command = "cd ../../ && pnpm install && cd apps/ssr && pnpm run build:netlify"
+  command = "cd ../../ && pnpm install && pnpm --filter=@follow/ssr run build:netlify"
   functions = "netlify/functions"
   publish = "dist"
 
