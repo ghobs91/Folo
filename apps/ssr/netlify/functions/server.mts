@@ -1,9 +1,15 @@
 /// <reference types="node" />
-import type { Context } from "@netlify/functions"
+import { fileURLToPath } from "node:url"
 
-// @ts-ignore - Generated during build
-// eslint-disable-next-line antfu/no-import-dist
-import { createApp } from "../../dist/server/index.mjs"
+import type { Context } from "@netlify/functions"
+import { dirname, join } from "pathe"
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
+// Load the bundled server code
+const serverPath = join(__dirname, "../../dist/server/index.mjs")
+const { createApp } = await import(serverPath)
 
 let app: Awaited<ReturnType<typeof createApp>> | null = null
 

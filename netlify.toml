@@ -1,12 +1,13 @@
+# Netlify configuration for Follow SSR
 [build]
   base = "apps/ssr"
-  command = "cd ../.. && pnpm run build:netlify --filter=@follow/ssr"
-  publish = "dist"
+  command = "cd ../../ && pnpm install && cd apps/ssr && pnpm run build:netlify"
   functions = "netlify/functions"
+  publish = "dist"
 
 [build.environment]
   NODE_VERSION = "20"
-  PNPM_VERSION = "9"
+  PNPM_VERSION = "10"
 
 # Serve static assets directly
 [[redirects]]
