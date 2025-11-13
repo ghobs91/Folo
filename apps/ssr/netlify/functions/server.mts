@@ -1,4 +1,5 @@
 /// <reference types="node" />
+import { existsSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 
 import type { Context } from "@netlify/functions"
@@ -7,20 +8,51 @@ import { dirname, join } from "pathe"
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
+let app: any = null
+let appError: Error | null = null
+
 // Load the bundled server code
-const serverPath = join(__dirname, "../../dist/server/index.mjs")
-const { createApp } = await import(serverPath)
-
-let app: Awaited<ReturnType<typeof createApp>> | null = null
-
-export default async (req: Request, _context: Context) => {
-  // Initialize app once and reuse
-  if (!app) {
-    app = await createApp()
-    await app.ready()
-  }
+async function initApp() {
+  if (appError) throw appError
+  if (app) return app
 
   try {
+    // Try multiple possible paths for the bundled server
+    const possiblePaths = [
+      join(__dirname, "../../dist/server/index.mjs"),
+      join(__dirname, "../../../dist/server/index.mjs"),
+      "/opt/build/repo/apps/ssr/dist/server/index.mjs",
+    ]
+
+    let serverPath: string | null = null
+    for (const path of possiblePaths) {
+      if (existsSync(path)) {
+        serverPath = path
+        break
+      }
+    }
+
+    if (!serverPath) {
+      throw new Error(
+        `Server bundle not found. Checked paths: ${possiblePaths.join(", ")}. __dirname: ${__dirname}`,
+      )
+    }
+
+    const { createApp } = await import(serverPath)
+    app = await createApp()
+    await app.ready()
+    return app
+  } catch (error) {
+    appError = error instanceof Error ? error : new Error(String(error))
+    throw appError
+  }
+}
+
+export default async (req: Request, _context: Context) => {
+  try {
+    // Initialize app once and reuse
+    await initApp()
+
     // Extract request details
     const url = new URL(req.url)
     const { method } = req
