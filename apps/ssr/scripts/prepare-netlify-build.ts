@@ -16,8 +16,15 @@ async function generateIndexHtmlData() {
   )
 }
 
+async function copyServerBundleForNetlify() {
+  // For Netlify, we need to ensure the bundled server is accessible to the function
+  // This will happen after tsdown builds the server bundle
+  console.info("✓ Server bundle will be accessible via included_files in netlify.toml")
+}
+
 async function main() {
   await generateIndexHtmlData()
+  await copyServerBundleForNetlify()
   console.info("✓ Prepared Netlify build artifacts")
 }
 

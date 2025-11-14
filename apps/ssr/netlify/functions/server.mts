@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { existsSync } from "node:fs"
+import { readdirSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 
 import type { Context } from "@netlify/functions"
@@ -17,33 +17,36 @@ async function initApp() {
   if (app) return app
 
   try {
-    // Try multiple possible paths for the bundled server
-    const possiblePaths = [
-      join(__dirname, "../../dist/server/index.mjs"),
-      join(__dirname, "../../../dist/server/index.mjs"),
-      "/opt/build/repo/apps/ssr/dist/server/index.mjs",
-    ]
+    // In Netlify, the function is in /.netlify/functions-internal/
+    // and dist/server is included via included_files configuration
+    const serverPath = join(__dirname, "../../dist/server/index.mjs")
 
-    let serverPath: string | null = null
-    for (const path of possiblePaths) {
-      if (existsSync(path)) {
-        serverPath = path
-        break
+    console.info("Attempting to load server from:", serverPath)
+    console.info("__dirname:", __dirname)
+
+    // Debug: list parent directories
+    try {
+      const parentDir = join(__dirname, "../..")
+      console.info("Parent directory contents:", readdirSync(parentDir))
+
+      try {
+        const distDir = join(__dirname, "../../dist")
+        console.info("Dist directory contents:", readdirSync(distDir))
+      } catch {
+        console.info("Could not read dist directory")
       }
-    }
-
-    if (!serverPath) {
-      throw new Error(
-        `Server bundle not found. Checked paths: ${possiblePaths.join(", ")}. __dirname: ${__dirname}`,
-      )
+    } catch {
+      console.info("Could not read parent directory")
     }
 
     const { createApp } = await import(serverPath)
     app = await createApp()
     await app.ready()
+    console.info("Server initialized successfully")
     return app
   } catch (error) {
     appError = error instanceof Error ? error : new Error(String(error))
+    console.error("Failed to initialize app:", appError)
     throw appError
   }
 }
