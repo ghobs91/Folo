@@ -53,11 +53,47 @@ async function initApp() {
 
 export default async (req: Request, _context: Context) => {
   try {
+    // Debug endpoint - return diagnostic info
+    const url = new URL(req.url)
+    if (url.pathname === "/.netlify/functions/server/__debug") {
+      try {
+        const parentDir = join(__dirname, "../..")
+        const distExists = readdirSync(parentDir).includes("dist")
+        
+        return new Response(
+          JSON.stringify({
+            __dirname,
+            parentDir,
+            parentDirContents: readdirSync(parentDir),
+            distExists,
+            distContents: distExists ? readdirSync(join(parentDir, "dist")) : "N/A",
+            serverPath: join(__dirname, "../../dist/server/index.mjs"),
+            appInitialized: !!app,
+            appError: appError?.message,
+          }, null, 2),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          },
+        )
+      } catch (debugError) {
+        return new Response(
+          JSON.stringify({
+            error: debugError instanceof Error ? debugError.message : String(debugError),
+            __dirname,
+          }, null, 2),
+          {
+            status: 500,
+            headers: { "content-type": "application/json" },
+          },
+        )
+      }
+    }
+
     // Initialize app once and reuse
     await initApp()
 
     // Extract request details
-    const url = new URL(req.url)
     const { method } = req
     const headers: Record<string, string> = {}
 
