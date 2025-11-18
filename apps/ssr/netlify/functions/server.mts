@@ -1,12 +1,10 @@
-/// <reference types="node" />
 import { readdirSync } from "node:fs"
+import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
 import type { Context } from "@netlify/functions"
-import { dirname, join } from "pathe"
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+const functionDir = dirname(fileURLToPath(import.meta.url))
 
 let app: any = null
 let appError: Error | null = null
@@ -19,18 +17,18 @@ async function initApp() {
   try {
     // In Netlify, the function is in /.netlify/functions-internal/
     // and dist/server is included via included_files configuration
-    const serverPath = join(__dirname, "../../dist/server/index.mjs")
+    const serverPath = join(functionDir, "../../dist/server/index.mjs")
 
     console.info("Attempting to load server from:", serverPath)
-    console.info("__dirname:", __dirname)
+    console.info("functionDir:", functionDir)
 
     // Debug: list parent directories
     try {
-      const parentDir = join(__dirname, "../..")
+      const parentDir = join(functionDir, "../..")
       console.info("Parent directory contents:", readdirSync(parentDir))
 
       try {
-        const distDir = join(__dirname, "../../dist")
+        const distDir = join(functionDir, "../../dist")
         console.info("Dist directory contents:", readdirSync(distDir))
       } catch {
         console.info("Could not read dist directory")
@@ -57,20 +55,24 @@ export default async (req: Request, _context: Context) => {
     const url = new URL(req.url)
     if (url.pathname === "/.netlify/functions/server/__debug") {
       try {
-        const parentDir = join(__dirname, "../..")
+        const parentDir = join(functionDir, "../..")
         const distExists = readdirSync(parentDir).includes("dist")
-        
+
         return new Response(
-          JSON.stringify({
-            __dirname,
-            parentDir,
-            parentDirContents: readdirSync(parentDir),
-            distExists,
-            distContents: distExists ? readdirSync(join(parentDir, "dist")) : "N/A",
-            serverPath: join(__dirname, "../../dist/server/index.mjs"),
-            appInitialized: !!app,
-            appError: appError?.message,
-          }, null, 2),
+          JSON.stringify(
+            {
+              functionDir,
+              parentDir,
+              parentDirContents: readdirSync(parentDir),
+              distExists,
+              distContents: distExists ? readdirSync(join(parentDir, "dist")) : "N/A",
+              serverPath: join(functionDir, "../../dist/server/index.mjs"),
+              appInitialized: !!app,
+              appError: appError?.message,
+            },
+            null,
+            2,
+          ),
           {
             status: 200,
             headers: { "content-type": "application/json" },
@@ -78,10 +80,14 @@ export default async (req: Request, _context: Context) => {
         )
       } catch (debugError) {
         return new Response(
-          JSON.stringify({
-            error: debugError instanceof Error ? debugError.message : String(debugError),
-            __dirname,
-          }, null, 2),
+          JSON.stringify(
+            {
+              error: debugError instanceof Error ? debugError.message : String(debugError),
+              functionDir,
+            },
+            null,
+            2,
+          ),
           {
             status: 500,
             headers: { "content-type": "application/json" },
