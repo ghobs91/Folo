@@ -24,10 +24,10 @@ export const defaultGeneralSettings: GeneralSettings = {
   unreadOnly: false,
   // mark unread
   scrollMarkUnread: true,
-  hoverMarkUnread: true,
+  hoverMarkUnread: false,
   renderMarkUnread: false,
   // timeline
-  groupByDate: true,
+  groupByDate: false,
   autoExpandLongSocialMedia: false,
   dimRead: false,
 
@@ -161,6 +161,7 @@ export const defaultIntegrationSettings: IntegrationSettings = {
 
 export const defaultAISettings: AISettings = {
   personalizePrompt: "",
+  aiTimelinePrompt: "",
   shortcuts: [],
 
   // MCP Services
@@ -169,6 +170,12 @@ export const defaultAISettings: AISettings = {
 
   // Features
   autoScrollWhenStreaming: true,
+
+  // BYOK (Bring Your Own Key)
+  byok: {
+    enabled: false,
+    providers: [],
+  },
 }
 
 export const defaultSettings = {

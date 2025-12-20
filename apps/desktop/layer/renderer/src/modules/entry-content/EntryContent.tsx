@@ -8,6 +8,7 @@ import { useFeedById } from "@follow/store/feed/hooks"
 import type { FeedModel } from "@follow/store/feed/types"
 import { useIsInbox } from "@follow/store/inbox/hooks"
 import { useSubscriptionByFeedId } from "@follow/store/subscription/hooks"
+import { useEntryTranslation } from "@follow/store/translation/hooks"
 import { thenable } from "@follow/utils"
 import { stopPropagation } from "@follow/utils/dom"
 import { EventBus } from "@follow/utils/event-bus"
@@ -17,9 +18,13 @@ import { useAnimationControls } from "motion/react"
 import * as React from "react"
 import { memo, useEffect, useRef, useState } from "react"
 
+import { useShowAITranslation } from "~/atoms/ai-translation"
 import { useEntryIsInReadability } from "~/atoms/readability"
+import { useActionLanguage } from "~/atoms/settings/general"
+import { AppErrorBoundary } from "~/components/common/AppErrorBoundary"
 import { Focusable } from "~/components/common/Focusable"
 import { m } from "~/components/common/Motion"
+import { ErrorComponentType } from "~/components/errors/enum"
 import { GlassButton } from "~/components/ui/button/GlassButton"
 import { HotkeyScope } from "~/constants"
 import { useRouteParamsSelector } from "~/hooks/biz/useRouteParams"
@@ -38,6 +43,7 @@ import { EntryScrollingAndNavigationHandler } from "./components/entry-content/E
 import { EntryTitleMetaHandler } from "./components/entry-content/EntryTitleMetaHandler"
 import type { EntryContentProps } from "./components/entry-content/types"
 import { getEntryContentLayout } from "./components/layouts"
+import type { EntryLayoutProps } from "./components/layouts/types"
 import { SourceContentPanel } from "./components/SourceContentView"
 import { useEntryContent } from "./hooks"
 
@@ -69,6 +75,13 @@ const EntryContentImpl: Component<EntryContentProps> = ({
   const isInReadabilityMode = useEntryIsInReadability(entryId)
 
   const { error, content, isPending } = useEntryContent(entryId)
+  const enableTranslation = useShowAITranslation()
+  const actionLanguage = useActionLanguage()
+  const entryTranslation = useEntryTranslation({
+    entryId,
+    language: actionLanguage,
+    enabled: enableTranslation,
+  })
 
   const routeView = useRouteParamsSelector((route) => route.view)
   const subscriptionView = subscription?.view
@@ -95,7 +108,6 @@ const EntryContentImpl: Component<EntryContentProps> = ({
     })
     return () => {
       removeBlock(BlockSliceAction.SPECIAL_TYPES.mainEntry)
-      removeBlock(BlockSliceAction.SPECIAL_TYPES.selectedText)
     }
   }, [addOrUpdateBlock, entryId, removeBlock])
   const animationController = useAnimationControls()
@@ -132,6 +144,16 @@ const EntryContentImpl: Component<EntryContentProps> = ({
   }, [scrollerRef])
 
   const scrollerRefObject = React.useMemo(() => ({ current: scrollerRef }), [scrollerRef])
+  const layoutTranslation = React.useMemo(
+    () =>
+      entryTranslation
+        ? {
+            content: entryTranslation.content ?? undefined,
+            title: entryTranslation.title ?? undefined,
+          }
+        : undefined,
+    [entryTranslation?.content, entryTranslation?.title],
+  )
   return (
     <div className={cn(className, "flex flex-col @container")}>
       <EntryTitleMetaHandler entryId={entryId} />
@@ -218,6 +240,7 @@ const EntryContentImpl: Component<EntryContentProps> = ({
                   view={view}
                   compact={compact}
                   noMedia={noMedia}
+                  translation={layoutTranslation}
                 />
               )}
             </article>
@@ -230,9 +253,11 @@ const EntryContentImpl: Component<EntryContentProps> = ({
 }
 export const EntryContent: Component<EntryContentProps> = memo((props) => {
   return (
-    <EntryContentFallback entryId={props.entryId}>
-      <EntryContentImpl {...props} />
-    </EntryContentFallback>
+    <AppErrorBoundary errorType={ErrorComponentType.EntryNotFound}>
+      <EntryContentFallback entryId={props.entryId}>
+        <EntryContentImpl {...props} />
+      </EntryContentFallback>
+    </AppErrorBoundary>
   )
 })
 
@@ -266,8 +291,16 @@ const AdaptiveContentRenderer: React.FC<{
   view: FeedViewType
   compact?: boolean
   noMedia?: boolean
-}> = ({ entryId, view, compact = false, noMedia = false }) => {
+  translation?: EntryLayoutProps["translation"]
+}> = ({ entryId, view, compact = false, noMedia = false, translation }) => {
   const LayoutComponent = getEntryContentLayout(view)
 
-  return <LayoutComponent entryId={entryId} compact={compact} noMedia={noMedia} />
+  return (
+    <LayoutComponent
+      entryId={entryId}
+      compact={compact}
+      noMedia={noMedia}
+      translation={translation}
+    />
+  )
 }

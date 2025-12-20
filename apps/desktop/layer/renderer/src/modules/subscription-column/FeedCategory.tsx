@@ -197,10 +197,12 @@ function FeedCategoryImpl({
             click: () => {
               unreadSyncService.markFeedAsRead(ids)
             },
+            requiresLogin: true,
           }),
           new MenuItemSeparator(),
           new MenuItemText({
             label: t("sidebar.feed_column.context_menu.add_feeds_to_list"),
+            requiresLogin: true,
             submenu: listList
               ?.map(
                 (list) =>
@@ -212,6 +214,7 @@ function FeedCategoryImpl({
                         listId: list.id,
                       })
                     },
+                    requiresLogin: true,
                   }) as MenuItemInput,
               )
               .concat(listList?.length > 0 ? [new MenuItemSeparator()] : [])
@@ -224,6 +227,7 @@ function FeedCategoryImpl({
                       content: () => <ListCreationModalContent />,
                     })
                   },
+                  requiresLogin: true,
                 }),
               ]),
           }),
@@ -241,14 +245,17 @@ function FeedCategoryImpl({
                     click() {
                       return changeCategoryView(v.view)
                     },
+                    requiresLogin: true,
                   }),
               ),
+            requiresLogin: true,
           }),
           new MenuItemText({
             label: t("sidebar.feed_column.context_menu.rename_category"),
             click: () => {
               setIsCategoryEditing(true)
             },
+            requiresLogin: true,
           }),
           new MenuItemText({
             label: t("sidebar.feed_column.context_menu.ungroup_category"),
@@ -261,6 +268,7 @@ function FeedCategoryImpl({
                 content: () => <CategoryRemoveDialogContent category={folderName!} view={view} />,
               })
             },
+            requiresLogin: true,
           }),
           new MenuItemText({
             label: t("sidebar.feed_column.context_menu.unsubscribe_category"),
@@ -275,6 +283,7 @@ function FeedCategoryImpl({
                 ),
               })
             },
+            requiresLogin: true,
           }),
         ],
         e,
@@ -290,7 +299,8 @@ function FeedCategoryImpl({
           ref={setNodeRef}
           data-active={isActive || isContextMenuOpen}
           className={cn(
-            isOver && "border-orange-400 bg-orange-400/60",
+            isOver && "border-folo bg-folo/60",
+
             "my-px px-2.5",
             feedColumnStyles.item,
           )}
@@ -303,7 +313,10 @@ function FeedCategoryImpl({
           }}
           {...contextMenuProps}
         >
-          <div className="flex w-full min-w-0 items-center" onDoubleClick={toggleCategoryOpenState}>
+          <div
+            className={cn("flex w-full min-w-0 items-center")}
+            onDoubleClick={toggleCategoryOpenState}
+          >
             <button
               data-type="collapse"
               type="button"
@@ -340,7 +353,6 @@ function FeedCategoryImpl({
             ) : (
               <Fragment>
                 <span className="grow truncate">{folderName}</span>
-
                 <UnreadNumber unread={unread} className="ml-2" />
               </Fragment>
             )}

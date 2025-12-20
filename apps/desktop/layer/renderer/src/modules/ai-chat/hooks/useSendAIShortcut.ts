@@ -1,4 +1,5 @@
 import { convertLexicalToMarkdown } from "@follow/components/ui/lexical-rich-editor/utils.js"
+import { DEFAULT_SUMMARIZE_TIMELINE_SHORTCUT_ID } from "@follow/shared/settings/defaults"
 import type { AIShortcut } from "@follow/shared/settings/interface"
 import { getCategoryFeedIds } from "@follow/store/subscription/getter"
 import type { EditorState } from "lexical"
@@ -13,6 +14,7 @@ import {
 } from "~/atoms/settings/ai"
 import { ROUTE_FEED_IN_FOLDER } from "~/constants"
 import { getRouteParams } from "~/hooks/biz/useRouteParams"
+import { useRequireLogin } from "~/hooks/common/useRequireLogin"
 import type { ShortcutData } from "~/modules/ai-chat/editor"
 import { LexicalAIEditorNodes, ShortcutNode } from "~/modules/ai-chat/editor"
 import { AIPanelRefsContext } from "~/modules/ai-chat/store/AIChatContext"
@@ -44,6 +46,7 @@ export const useSendAIShortcut = () => {
   const chatActions = useChatActions()
   const blockActions = useBlockActions()
   const aiPanelRefs = use(AIPanelRefsContext)
+  const { ensureLogin } = useRequireLogin()
 
   const staticEditor = useMemo(() => {
     return createEditor({
@@ -142,6 +145,10 @@ export const useSendAIShortcut = () => {
 
   const sendShortcutMessage = useCallback(
     (editorState: EditorState, shortcutId?: string) => {
+      const isTimelineSummaryShortcut = shortcutId === DEFAULT_SUMMARIZE_TIMELINE_SHORTCUT_ID
+      if (!isTimelineSummaryShortcut && !ensureLogin()) {
+        return
+      }
       const contextBlocks = buildContextBlocks()
 
       staticEditor.setEditorState(editorState)
@@ -166,9 +173,18 @@ export const useSendAIShortcut = () => {
         id: prefixMessageIdWithShortcut(nanoid(), shortcutId),
       }
 
-      void chatActions.sendMessage(message)
+      void chatActions.sendMessage(
+        message,
+        isTimelineSummaryShortcut
+          ? {
+              body: {
+                scene: "timeline-summary",
+              },
+            }
+          : undefined,
+      )
     },
-    [buildContextBlocks, chatActions, staticEditor],
+    [buildContextBlocks, chatActions, ensureLogin, staticEditor],
   )
 
   const prefillInput = useCallback(
